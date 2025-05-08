@@ -76,23 +76,61 @@ class Player:
 
 class GameState:
     def __init__(self):
-        players = []
-        dealer = Player(True)
-        player = Player(False)
-        players.append(dealer)
-        players.append(player)
+        self.dealer = Player(True)
+        self.player = Player(False)
+        self.round = 0
+        self.shoe = Shoe(1)
+        self.shoe.shuffle()
+        self.discard = DiscardPile()
 
-        shoe = Shoe(1)
-        shoe.shuffle()
+    def start_game(self):
+        while self.player.money > 0:
+            self.draw(self.player, 2)
+            self.draw(self.dealer, 2)
+            self.display_hands()
+            self.bet()
+            self.turn_actions()
 
-        discard = DiscardPile()
+    def draw(self, player, num_cards):
+        player.hand.card_list.extend(self.shoe.draw(num_cards))
 
-        player.hand.card_list.extend(shoe.draw(2))
-        dealer.hand.card_list.extend(shoe.draw(2))
-        print(shoe)
-        print(player)
-        print(score_hand(player.hand))
-        print(dealer)
+    def display_hands(self):
+        print(self.player)
+        print(self.dealer)
+
+    def bet(self):
+        amount = input('Enter your bet:')
+        self.player.money - int(amount)
+
+    def turn_actions(self):
+        chosen_action = input('1 to hit, 2 to check')
+        if chosen_action == '1':
+            self.draw(self.player, 1)
+            self.display_hands()
+            self.turn_actions()
+        if chosen_action == '2':
+            while score_hand(self.dealer.hand) < 17:
+                self.draw(self.dealer, 1)
+            if score_hand(self.dealer.hand) > 21:
+                print('Dealer busts!')
+                self.display_hands()
+            else:
+                self.display_hands()
+                if score_hand(self.player.hand) > score_hand(self.dealer.hand):
+                    print('Player wins!')
+                elif score_hand(self.player.hand) == score_hand(self.dealer.hand):
+                    print('Tie!')
+                else: 
+                    print('Dealer wins!')
+        self.end_round()
+
+    def end_round(self):
+        for i in range(len(self.player.hand.card_list)):
+            self.discard.card_list.append(self.player.hand.card_list.pop())
+        for i in range(len(self.dealer.hand.card_list)):
+            self.discard.card_list.append(self.dealer.hand.card_list.pop())
+        print('End of round, starting next round')
+
 
 def score_hand(hand):
     score = 0
@@ -105,5 +143,6 @@ def score_hand(hand):
 
 def main():
     game = GameState()
+    game.start_game()
 
 main()
